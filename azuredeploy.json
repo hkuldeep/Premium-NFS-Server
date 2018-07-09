@@ -197,7 +197,7 @@
     
     "NFSScripts": {
       "scriptsToDownload": [
-        "https://raw.githubusercontent.com/grandparoach/Premium-NFS-Server/special/setup.sh"
+        "https://raw.githubusercontent.com/hkuldeep/Premium-NFS-Server/special/setup.sh"
       ],
       "commandToExecute": "[concat('bash setup.sh ', parameters('adminUserName'))]"
     }
