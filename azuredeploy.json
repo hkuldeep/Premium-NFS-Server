@@ -1,507 +1,153 @@
 {
-  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
-  "contentVersion": "1.0.0.0",
-  "parameters": {
-    "NFSVMsku": {
-      "type": "string",
-      "defaultValue": "Standard_E64s_v3",
-      "allowedValues": [
-        "Standard_DS3_v2",
-        "Standard_DS4_v2",
-        "Standard_DS5_v2",
-        "Standard_DS11_v2",
-        "Standard_DS12_v2",
-        "Standard_DS13_v2",
-        "Standard_DS14_v2",
-        "Standard_DS15_v2",
-        
-        "Standard_D8s_v3",
-        "Standard_D16s_v3",
-        "Standard_D32s_v3",
-        "Standard_D64s_v3",
-
-        "Standard_E8s_v3",
-        "Standard_E16s_v3",
-        "Standard_E32s_v3",
-        "Standard_E64s_v3",
-
-        "Standard_F8s_v2",
-        "Standard_F16s_v2",
-        "Standard_F32s_v2",
-        "Standard_F64s_v2"
-      ],
-      "metadata": {
-        "description": "sku to use for the NFS server VM"
-      }
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "location": {
+            "type": "string"
+        },
+        "networkInterfaceName": {
+            "type": "string"
+        },
+        "networkSecurityGroupName": {
+            "type": "string"
+        },
+        "networkSecurityGroupRules": {
+            "type": "array"
+        },
+        "subnetName": {
+            "type": "string"
+        },
+        "virtualNetworkId": {
+            "type": "string"
+        },
+        "virtualMachineName": {
+            "type": "string"
+        },
+        "virtualMachineRG": {
+            "type": "string"
+        },
+        "osDiskType": {
+            "type": "string"
+        },
+        "virtualMachineSize": {
+            "type": "string"
+        },
+        "adminUsername": {
+            "type": "string"
+        },
+        "adminPassword": {
+            "type": "secureString"
+        },
+        "diagnosticsStorageAccountName": {
+            "type": "string"
+        },
+        "diagnosticsStorageAccountId": {
+            "type": "string"
+        }
     },
-    "NISVMsku": {
-      "type": "string",
-      "defaultValue": "Standard_F8",
-      "allowedValues": [
-        "Standard_F4",
-        "Standard_F8",
-        "Standard_F16"
-      ],
-      "metadata": {
-        "description": "sku to use for the NIS Server VM"
-      }
+    "variables": {
+        "nsgId": "[resourceId(resourceGroup().name, 'Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroupName'))]",
+        "vnetId": "[parameters('virtualNetworkId')]",
+        "subnetRef": "[concat(variables('vnetId'), '/subnets/', parameters('subnetName'))]"
     },
-    "SGEVMsku": {
-      "type": "string",
-      "defaultValue": "Standard_F8",
-      "allowedValues": [
-        "Standard_F4",
-        "Standard_F8",
-        "Standard_F16"
-      ],
-      "metadata": {
-        "description": "sku to use for the SGE Server VM"
-      }
-    },
-    "LICVMsku": {
-      "type": "string",
-      "defaultValue": "Standard_F16",
-      "allowedValues": [
-        "Standard_F4",
-        "Standard_F8",
-        "Standard_F16"
-      ],
-      "metadata": {
-        "description": "sku to use for the License Server VM"
-      }
-    },
-    "adminUserName": {
-      "type": "string",
-      "metadata": {
-        "description": "User name for the Virtual Machine."
-      }
-    },
-    "authenticationType": {
-      "type": "string",
-      "defaultValue": "password",
-      "allowedValues": [
-        "password",
-        "sshPublicKey"
-      ],
-      "metadata": {
-        "description": "Authentication type for the virtual machines"
-      }
-    },
-    "adminPassword": {
-      "type": "securestring",
-      "defaultValue": "",
-      "metadata": {
-        "description": "Admin password for the virtual machines"
-      }
-    },
-    "sshPublicKey": {
-      "type": "string",
-      "defaultValue": "",
-      "metadata": {
-        "description": "SSH public key that will be included on all nodes. The OpenSSH public key can be generated with tools like ssh-keygen on Linux or OS X."
-      }
-    },
-    "dataDiskSize": {
-      "type": "int",
-      "defaultValue": 1024,
-      "metadata": {
-        "description": "The size in GB of each of the data disks that are attached to the VM.  A RAID-0 volume is created with all data disks that is dataDiskSize * dataDiskCount in size."
-      }
-    },
-    "nbDataDisks": {
-      "type": "int",
-      "defaultValue": 16,
-      "maxValue": 16,
-      "metadata": {
-        "description": "The number of disks to attach to the NFS server."
-      }
-    },
-    "existingVNetName": {
-      "type": "string",
-      "defaultValue": "POC-VirtualNetwork",
-      "metadata": {
-        "description": "name of existing Virtual Network"
-      }
-    },
-    "existingVNetResourceGroup": {
-      "type": "string",
-       "defaultValue": "POC-ResourceGroup",
-      "metadata": {
-        "description": "name of Resource Group for existing Virtual Network"
-      }
-    },
-    "existingSubnetName": {
-      "type": "string",
-      "defaultValue": "POC-Subnet",
-      "metadata": {
-        "description": "name of existing Virtual Network"
-      }
+    "resources": [
+        {
+            "name": "[parameters('networkInterfaceName')]",
+            "type": "Microsoft.Network/networkInterfaces",
+            "apiVersion": "2018-10-01",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[concat('Microsoft.Network/networkSecurityGroups/', parameters('networkSecurityGroupName'))]"
+            ],
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "subnet": {
+                                "id": "[variables('subnetRef')]"
+                            },
+                            "privateIPAllocationMethod": "Dynamic"
+                        }
+                    }
+                ],
+                "networkSecurityGroup": {
+                    "id": "[variables('nsgId')]"
+                }
+            },
+            "tags": {
+                "Owner": "Shihann",
+                "Project": "Cloud2019",
+                "SubProject": "sweperf"
+            }
+        },
+        {
+            "name": "[parameters('networkSecurityGroupName')]",
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "apiVersion": "2018-08-01",
+            "location": "[parameters('location')]",
+            "properties": {
+                "securityRules": "[parameters('networkSecurityGroupRules')]"
+            },
+            "tags": {
+                "Owner": "Shihann",
+                "Project": "Cloud2019",
+                "SubProject": "sweperf"
+            }
+        },
+        {
+            "name": "[parameters('virtualMachineName')]",
+            "type": "Microsoft.Compute/virtualMachines",
+            "apiVersion": "2018-06-01",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[concat('Microsoft.Network/networkInterfaces/', parameters('networkInterfaceName'))]"
+            ],
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "[parameters('virtualMachineSize')]"
+                },
+                "storageProfile": {
+                    "osDisk": {
+                        "createOption": "fromImage",
+                        "managedDisk": {
+                            "storageAccountType": "[parameters('osDiskType')]"
+                        }
+                    },
+                    "imageReference": {
+                        "id": "/subscriptions/006e166f-56a4-4d28-89c8-f84ef253634e/resourceGroups/Cloud2019-Perf/providers/Microsoft.Compute/images/SNPS-2019-Q1-CO75-image-westus"
+                    }
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaceName'))]"
+                        }
+                    ]
+                },
+                "osProfile": {
+                    "computerName": "[parameters('virtualMachineName')]",
+                    "adminUsername": "[parameters('adminUsername')]",
+                    "adminPassword": "[parameters('adminPassword')]"
+                },
+                "diagnosticsProfile": {
+                    "bootDiagnostics": {
+                        "enabled": true,
+                        "storageUri": "[concat('https://', parameters('diagnosticsStorageAccountName'), '.blob.core.windows.net/')]"
+                    }
+                }
+            },
+            "tags": {
+                "Owner": "Shihann",
+                "Project": "Cloud2019",
+                "SubProject": "sweperf"
+            }
+        }
+    ],
+    "outputs": {
+        "adminUsername": {
+            "type": "string",
+            "value": "[parameters('adminUsername')]"
+        }
     }
-  },
-  "variables": {
-    "location": "[resourceGroup().location]",
-    "vnetID": "[resourceId(parameters('existingVNetResourceGroup'), 'Microsoft.Network/virtualNetworks', parameters('existingVNetName'))]",
-    "SubnetRef": "[concat(variables('vnetID'),'/subnets/', parameters('existingSubnetName'))]",
-    "DiagSAName": "[concat(uniqueString(subscription().id, resourceGroup().id), 'diag')]",
-    "NFSName": "NFS01",
-    "NISName": "Nis01",
-    "SGEName": "gridmaster01",
-    "LICName": "Lic01",
-    "NFSIPConfigName": "[concat(variables('NFSName'), 'ipconfig')]",
-    "NISIPConfigName": "[concat(variables('NISName'), 'ipconfig')]",
-    "SGEIPConfigName": "[concat(variables('SGEName'), 'ipconfig')]",
-    "LICIPConfigName": "[concat(variables('LICName'), 'ipconfig')]",
-    "NFSNicName": "[concat(variables('NFSName'), 'nic')]",
-    "NISNicName": "[concat(variables('NISName'), 'nic')]",
-    "SGENicName": "[concat(variables('SGEName'), 'nic')]",
-    "LICNicName": "[concat(variables('LICName'), 'nic')]",
-    "ServerimageReference": "[variables('Images')['CentOS_7.3']]",
-    "NISimageReference": "[variables('Images')['CentOS_6.9']]",
-    "NFSimageReference": "[variables('Images')['CentOS_7.4']]",
-    "sshKeyPath": "[concat('/home/',parameters('adminUserName'),'/.ssh/authorized_keys')]",
-    "Images": {
-      "CentOS_6.9": {
-        "publisher": "OpenLogic",
-        "offer": "CentOS",
-        "sku": "6.9",
-        "version": "latest"
-      },
-      "CentOS_7.3": {
-        "publisher": "OpenLogic",
-        "offer": "CentOS",
-        "sku": "7.3",
-        "version": "latest"
-      },
-      "CentOS_7.4": {
-        "publisher": "OpenLogic",
-        "offer": "CentOS",
-        "sku": "7.4",
-        "version": "latest"
-      }
-    },
-    "linuxConfiguration_sshPublicKey": {
-      "disablePasswordAuthentication": "true",
-      "ssh": {
-        "publicKeys": [
-          {
-            "path": "[variables('sshKeyPath')]",
-            "keyData": "[parameters('sshPublicKey')]"
-          }
-        ]
-      }
-    },
-    "linuxConfiguration_password": { },
-    "linuxConfiguration": "[variables(concat('linuxConfiguration_',parameters('authenticationType')))]",
-    
-    "storageAccountType": "Standard_LRS",
-    
-    "NFSScripts": {
-      "scriptsToDownload": [
-        "https://raw.githubusercontent.com/hkuldeep/Premium-NFS-Server/special/setup.sh"
-      ],
-      "commandToExecute": "[concat('bash setup.sh ', parameters('adminUserName'))]"
-    }
-  },  
-  "resources": [
-    {
-      "type": "Microsoft.Storage/storageAccounts",
-      "name": "[variables('DiagSAName')]",
-      "location": "[variables('location')]",
-      "apiVersion": "2015-06-15",
-      "properties": {
-        "accountType": "Standard_LRS"
-      }
-    },
-    {
-      "type": "Microsoft.Network/networkInterfaces",
-      "name": "[variables('NFSNicName')]",
-      "location": "[variables('location')]",
-      "apiVersion": "2018-04-01",
-      "dependsOn": [ ],
-      "properties": {
-        "ipConfigurations": [
-          {
-            "name": "[variables('NFSIPConfigName')]",
-            "properties":  {
-              "privateIPAllocationMethod": "Dynamic",
-              "subnet": {
-                "id": "[variables('SubnetRef')]"
-              }
-            }
-          }
-        ],
-        "enableAcceleratedNetworking": true
-      }
-    },
-    {
-      "type": "Microsoft.Compute/virtualMachines",
-      "name": "[variables('NFSName')]",
-      "location": "[variables('location')]",
-      "apiVersion": "2017-03-30",
-      "dependsOn": [
-        "[concat('Microsoft.Network/networkinterfaces/', variables('NFSNicName'))]",
-        "[concat('Microsoft.Storage/storageAccounts/', variables('DiagSAName'))]"
-      ],
-      "properties": {
-        "hardwareProfile": {
-          "vmSize": "[parameters('NFSVMsku')]"
-        },
-        "osProfile": {
-          "computerName": "[variables('NFSName')]",
-          "adminUsername": "[parameters('adminUserName')]",
-          "adminPassword": "[parameters('adminPassword')]",
-          "linuxConfiguration": "[variables('linuxConfiguration')]"
-        },
-        "storageProfile": {
-          "imageReference": "[variables('NFSimageReference')]",
-          "osDisk": {
-            "caching": "ReadOnly",
-            "createOption": "FromImage",
-             "managedDisk": {
-                "storageAccountType": "Premium_LRS"
-             }
-          },
-
-          "copy": [{
-            "name": "dataDisks",
-            "count": "[parameters('nbDataDisks')]",
-            "input": {
-                "lun": "[copyIndex('dataDisks')]",
-                "createOption": "Empty",
-                "caching": "ReadOnly",
-                "diskSizeGB": "[parameters('datadiskSize')]"
-            }
-        }]
-
-         
-        },
-        "networkProfile": {
-          "networkInterfaces": [
-            {
-               "id": "[resourceId('Microsoft.Network/networkInterfaces',variables('NFSNicName'))]"
-            }
-          ]
-        },
-        "diagnosticsProfile": {
-          "bootDiagnostics": {
-            "enabled": "true",
-           "storageUri": "[concat('http://',variables('DiagSAName'),'.blob.core.windows.net')]"
-          }
-        }
-      }
-    },     
-    {
-      "type": "Microsoft.Compute/virtualMachines/extensions",
-      "name": "[concat(variables('NFSName'), '/ext')]",
-      "apiVersion": "2015-06-15",
-      "location": "[resourceGroup().location]",
-      "dependsOn": [
-        "[concat('Microsoft.Compute/virtualMachines/', variables('NFSName'))]"
-      ],
-      "properties": {
-        "publisher": "Microsoft.Azure.Extensions",
-        "type": "CustomScript",
-        "typeHandlerVersion": "2.0",
-        "autoUpgradeMinorVersion": true,
-        "settings": {
-          "fileUris": "[variables('NFSScripts').scriptsToDownload]"
-        },
-        "protectedSettings": {
-          "commandToExecute": "[variables('NFSScripts').commandToExecute]"
-        }
-      }
-    },
-    {
-      "type": "Microsoft.Network/networkInterfaces",
-      "name": "[variables('NISNicName')]",
-      "location": "[variables('location')]",
-      "apiVersion": "2018-04-01",
-      "dependsOn": [ ],
-      "properties": {
-        "ipConfigurations": [
-          {
-            "name": "[variables('NISIPConfigName')]",
-            "properties":  {
-              "privateIPAllocationMethod": "Dynamic",
-              "subnet": {
-                "id": "[variables('SubnetRef')]"
-              }
-            }
-          }
-        ]
-      }
-    },
-    {
-      "type": "Microsoft.Compute/virtualMachines",
-      "name": "[variables('NISName')]",
-      "location": "[variables('location')]",
-      "apiVersion": "2017-03-30",
-      "dependsOn": [
-        "[concat('Microsoft.Network/networkinterfaces/', variables('NISNicName'))]",
-        "[concat('Microsoft.Storage/storageAccounts/', variables('DiagSAName'))]"
-      ],
-      "properties": {
-        "hardwareProfile": {
-          "vmSize": "[parameters('NISVMsku')]"
-        },
-        "osProfile": {
-          "computerName": "[variables('NISName')]",
-          "adminUsername": "[parameters('adminUserName')]",
-          "adminPassword": "[parameters('adminPassword')]",
-          "linuxConfiguration": "[variables('linuxConfiguration')]"
-        },
-        "storageProfile": {
-          "imageReference": "[variables('NISimageReference')]",
-          "osDisk": {
-            "caching": "ReadOnly",
-            "createOption": "FromImage",
-             "managedDisk": {
-                "storageAccountType": "Standard_LRS"
-             }
-          }
-        },
-        "networkProfile": {
-          "networkInterfaces": [
-            {
-               "id": "[resourceId('Microsoft.Network/networkInterfaces',variables('NISNicName'))]"
-            }
-          ]
-        },
-        "diagnosticsProfile": {
-          "bootDiagnostics": {
-            "enabled": "true",
-           "storageUri": "[concat('http://',variables('DiagSAName'),'.blob.core.windows.net')]"
-          }
-        }
-      }
-    },
-    {
-      "type": "Microsoft.Network/networkInterfaces",
-      "name": "[variables('SGENicName')]",
-      "location": "[variables('location')]",
-      "apiVersion": "2018-04-01",
-      "dependsOn": [ ],
-      "properties": {
-        "ipConfigurations": [
-          {
-            "name": "[variables('SGEIPConfigName')]",
-            "properties":  {
-              "privateIPAllocationMethod": "Dynamic",
-              "subnet": {
-                "id": "[variables('SubnetRef')]"
-              }
-            }
-          }
-        ]
-      }
-    },
-    {
-      "type": "Microsoft.Compute/virtualMachines",
-      "name": "[variables('SGEName')]",
-      "location": "[variables('location')]",
-      "apiVersion": "2017-03-30",
-      "dependsOn": [
-        "[concat('Microsoft.Network/networkinterfaces/', variables('SGENicName'))]",
-        "[concat('Microsoft.Storage/storageAccounts/', variables('DiagSAName'))]"
-      ],
-      "properties": {
-        "hardwareProfile": {
-          "vmSize": "[parameters('SGEVMsku')]"
-        },
-        "osProfile": {
-          "computerName": "[variables('SGEName')]",
-          "adminUsername": "[parameters('adminUserName')]",
-          "adminPassword": "[parameters('adminPassword')]",
-          "linuxConfiguration": "[variables('linuxConfiguration')]"
-        },
-        "storageProfile": {
-          "imageReference": "[variables('ServerimageReference')]",
-          "osDisk": {
-            "caching": "ReadOnly",
-            "createOption": "FromImage",
-             "managedDisk": {
-                "storageAccountType": "Standard_LRS"
-             }
-          }
-        },
-        "networkProfile": {
-          "networkInterfaces": [
-            {
-               "id": "[resourceId('Microsoft.Network/networkInterfaces',variables('SGENicName'))]"
-            }
-          ]
-        },
-        "diagnosticsProfile": {
-          "bootDiagnostics": {
-            "enabled": "true",
-           "storageUri": "[concat('http://',variables('DiagSAName'),'.blob.core.windows.net')]"
-          }
-        }
-      }
-    },
-    {
-      "type": "Microsoft.Network/networkInterfaces",
-      "name": "[variables('LICNicName')]",
-      "location": "[variables('location')]",
-      "apiVersion": "2018-04-01",
-      "dependsOn": [ ],
-      "properties": {
-        "ipConfigurations": [
-          {
-            "name": "[variables('LICIPConfigName')]",
-            "properties":  {
-              "privateIPAllocationMethod": "Dynamic",
-              "subnet": {
-                "id": "[variables('SubnetRef')]"
-              }
-            }
-          }
-        ]
-      }
-    },
-    {
-      "type": "Microsoft.Compute/virtualMachines",
-      "name": "[variables('LICName')]",
-      "location": "[variables('location')]",
-      "apiVersion": "2017-03-30",
-      "dependsOn": [
-        "[concat('Microsoft.Network/networkinterfaces/', variables('LICNicName'))]",
-        "[concat('Microsoft.Storage/storageAccounts/', variables('DiagSAName'))]"
-      ],
-      "properties": {
-        "hardwareProfile": {
-          "vmSize": "[parameters('LICVMsku')]"
-        },
-        "osProfile": {
-          "computerName": "[variables('LICName')]",
-          "adminUsername": "[parameters('adminUserName')]",
-          "adminPassword": "[parameters('adminPassword')]",
-          "linuxConfiguration": "[variables('linuxConfiguration')]"
-        },
-        "storageProfile": {
-          "imageReference": "[variables('ServerimageReference')]",
-          "osDisk": {
-            "caching": "ReadOnly",
-            "createOption": "FromImage",
-             "managedDisk": {
-                "storageAccountType": "Standard_LRS"
-             }
-          }
-        },
-        "networkProfile": {
-          "networkInterfaces": [
-            {
-               "id": "[resourceId('Microsoft.Network/networkInterfaces',variables('LICNicName'))]"
-            }
-          ]
-        },
-        "diagnosticsProfile": {
-          "bootDiagnostics": {
-            "enabled": "true",
-           "storageUri": "[concat('http://',variables('DiagSAName'),'.blob.core.windows.net')]"
-          }
-        }
-      }
-    }
-  ]
 }
