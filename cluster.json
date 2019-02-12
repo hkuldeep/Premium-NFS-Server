@@ -69,9 +69,9 @@
       "type": "string",
       "defaultValue": "Standard_F8",
       "allowedValues": [
-        "Standard_F4",
-        "Standard_F8",
-        "Standard_F16"
+        "Standard_F4s",
+        "Standard_F8s",
+        "Standard_F16s"
       ],
       "metadata": {
         "description": "sku to use for the NIS Server VM"
