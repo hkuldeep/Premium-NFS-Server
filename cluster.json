@@ -157,7 +157,7 @@
     "location": "[resourceGroup().location]",
     "vnetID": "[resourceId(parameters('existingVNetResourceGroup'), 'Microsoft.Network/virtualNetworks', parameters('existingVNetName'))]",
     "SubnetRef": "[concat(variables('vnetID'),'/subnets/', parameters('existingSubnetName'))]",
-    "LoginName": "loginserver",
+    "LoginName": "jumphost",
     "LoginIPConfigName": "[concat(variables('loginName'), 'ipconfig')]",
     "NodeipConfigName": "[concat(parameters('ClusterPrefix'), 'ipconfig')]",
     "LoginNicName": "[concat(variables('loginName'), 'nic')]",
