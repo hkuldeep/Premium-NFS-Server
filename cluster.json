@@ -13,6 +13,13 @@
       "type": "string",
       "defaultValue": "Standard_H16m",
       "allowedValues": [
+        "Standard_E2s_v3",
+        "Standard_HB60rs",
+        "Standard_HC44rs",
+        "Standard_E48s_v4",
+        "Standard_E48as_v4",
+        "Standard_E64s_v4",
+        "Standard_E64as_v4",
         "Standard_HB120rs_v2",
         "Standard_A8",
         "Standard_A9",
@@ -280,7 +287,8 @@
         },
         "dependsOn": [ ],
         "properties": {
-          "overprovision": "false",
+          "overprovision": "true",
+          "singlePlacementGroup": "false",
           "upgradePolicy": {
             "mode": "Manual"
           },
